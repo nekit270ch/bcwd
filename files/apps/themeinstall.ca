@@ -1,0 +1,22 @@
+async function main(bcwd, args){
+    if(args.length == 0){
+        exit();
+        return 'Недостаточно аргументов';
+    }
+
+    let tName = args[0];
+
+    if(args[1] == '-c'){
+        let theme = await bcwd.fs.file.readObj(tName);
+        let dr = await bcwd.shell.messageBox({
+            title: 'Установщик тем',
+            text: `Установить эту тему?\n\nНазвание: ${theme.name}\nВерсия: ${theme.version}\nРазработчик: ${theme.developer.name}\nОписание:\n${theme.description}`,
+            buttons: ['Да', 'Нет']
+        });
+        if(dr != 'Да') return 'Пользователь отказался от установки';
+    }
+
+    await bcwd.ff.theme.install(tName);
+
+    exit();
+}

@@ -1,0 +1,55 @@
+async function main(bcwd, args){
+    let fileName;
+    let win, ta;
+
+    async function open(fn){
+        fileName = fn;
+        let text = await bcwd.fs.file.read(fn);
+        ta.value = text;
+        win.title.innerText = fileName + ' - Текстовый редактор';
+    }
+
+    let el = document.createElement('div');
+
+    ta = document.createElement('textarea');
+    ta.style.width = '40em';
+    ta.style.height = '15em';
+
+    let btnCont = document.createElement('div');
+    btnCont.style.display = 'flex';
+    btnCont.style.justifyContent = 'space-evenly';
+    btnCont.style.paddingBottom = '0.1em';
+
+    let btnOpen = document.createElement('button');
+    btnOpen.innerText = 'Открыть';
+    btnOpen.addEventListener('click', async ()=>{
+        open(await bcwd.shell.inputBox({ title: 'Открыть файл', text: 'Введите путь к файлу' }));
+    });
+
+    let btnSave = document.createElement('button');
+    btnSave.innerText = 'Сохранить';
+    btnSave.addEventListener('click', ()=>{
+        bcwd.fs.file.write(fileName, ta.value);
+    });
+
+    let btnSaveAs = document.createElement('button');
+    btnSaveAs.innerText = 'Сохранить как';
+    btnSaveAs.addEventListener('click', async ()=>{
+        bcwd.fs.file.write(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }), ta.value);
+    });
+
+    btnCont.appendChild(btnOpen);
+    btnCont.appendChild(btnSave);
+    btnCont.appendChild(btnSaveAs);
+
+    el.appendChild(ta);
+    el.appendChild(btnCont);
+
+    win = await bcwd.window.open({
+        title: 'Текстовый редактор',
+        elem: el,
+        onclose: ()=>exit()
+    });
+
+    if(args.length > 0) open(args[0]);
+}

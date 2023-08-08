@@ -1,0 +1,23 @@
+async function main(bcwd, args){
+    if(args.length == 0){
+        exit();
+        return 'Недостаточно аргументов';
+    }
+
+    let pkgName = args[0];
+
+    if(args[1] == '-c'){
+        let pkg = await bcwd.fs.file.readObj(pkgName);
+        let dr = await bcwd.shell.messageBox({
+            title: 'BCAP Installer',
+            text: `Установить этот пакет?\n\nНазвание: ${pkg.name}\nВерсия: ${pkg.version}\nРазработчик: ${pkg.developer.name}\nОписание:\n${pkg.description}`,
+            buttons: ['Да', 'Нет']
+        });
+        if(dr != 'Да') return 'Пользователь отказался от установки';
+    }
+
+    let pr = await bcwd.ff.bcap.installFromFile(pkgName, true);
+
+    exit();
+    if(args[1] == '-v') return pr;
+}

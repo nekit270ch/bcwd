@@ -1,0 +1,12 @@
+{
+    "sa": { "code": "bcwd.fs.file.exec('$fileName', [])" },
+    "ca": { "fileName": "/bapps/apphost.sa", "args": ["$fileName"] },
+    "txt": { "fileName": "/apps/editor.ca", "args": ["$fileName"] },
+    "json": { "fileName": "/apps/editor.ca", "args": ["$fileName"] },
+    "js": { "fileName": "/apps/editor.ca", "args": ["$fileName"] },
+    "css": { "fileName": "/apps/editor.ca", "args": ["$fileName"] },
+    "html": { "fileName": "/apps/htmlhost.ca", "args": ["$fileName", "400", "300"] },
+    "du": { "fileName": "/apps/duhost.ca", "args": ["$fileName", "400", "300"] },
+    "bcap": { "fileName": "/apps/bcapinstall.ca", "args": ["$fileName", "-c"] },
+    "theme": { "fileName": "/apps/themeinstall.ca", "args": ["$fileName", "-c"] }
+}

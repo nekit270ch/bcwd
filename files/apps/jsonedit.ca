@@ -1,0 +1,139 @@
+async function main(bcwd, args){
+    let win, el = document.createElement('div');
+
+    if(args[0] == "--help" || args[0] == "-h"){
+        exit();
+        return "jsonedit <fileName> [customTitle] [customRoot] [onlySaveButton]"
+    }
+
+    let customTitle = args[1], customRoot = args[2], onlySave = !!args[3];
+
+    win = await bcwd.window.open({
+        title: customTitle||'JSONEdit',
+        elem: el,
+        onclose: ()=>exit()
+    });
+
+    let tree = document.createElement('div');
+    tree.style.margin = '0.5em';
+    el.appendChild(tree);
+
+    let fileName = args[0];
+    let jobj = {};
+
+    if(fileName) await open(fileName);
+
+    async function open(fn){
+        jobj = await bcwd.fs.file.readObj(fn);
+        win.title.innerText = customTitle||(fn + ' - JSONEdit');
+        fileName = fn;
+
+        tree.innerHTML = '';
+        function createObjTree(object, parentElement, objectName, i, marginWidth){
+            let det = document.createElement('details');
+            det.style.marginLeft = i==0?0:marginWidth+'em';
+            
+            let sum = document.createElement('summary');
+            sum.style.cursor = 'pointer';
+            sum.innerText = objectName;
+            det.appendChild(sum);
+
+            let elCont = document.createElement('div');
+            det.appendChild(elCont);
+
+            function updateElems(){
+                for(let i = 0; i < elCont.children.length; i++){
+                    let child = elCont.children[i];
+                    if(child.nodeName != 'SUMMARY' && child.nodeName != 'BUTTON') elCont.removeChild(child);
+                }
+
+                for(let j in object){
+                    let e = object[j];
+                    if(e && typeof e == 'object') createObjTree(e, elCont, j, i+1, marginWidth);
+                    else{
+                        let dv = document.createElement('div');
+                        dv.style.marginLeft = marginWidth+'em';
+                        dv.style.cursor = 'pointer';
+                        dv.innerText = '• '+j;
+                        
+                        dv.addEventListener('click', async ()=>{
+                            let ibr = await bcwd.shell.inputBox({
+                                title: customTitle||'JSONEdit',
+                                text: `Введите новое значение для "${j}"`,
+                                defaultText: object[j]
+                            });
+
+                            if(ibr){
+                                object[j] = (typeof(e)=='number'?parseFloat(ibr):(typeof(e)=='boolean'?ibr=='true':ibr));
+                            }
+                        });
+
+                        elCont.appendChild(dv);
+                    }
+                }
+            }
+
+            let addPropBtn = document.createElement('button');
+            addPropBtn.style.marginLeft = marginWidth+'em';
+            addPropBtn.style.marginTop = '0.6em';
+            addPropBtn.innerText = 'Добавить свойство';
+            addPropBtn.addEventListener('click', async ()=>{
+                let propName = await bcwd.shell.inputBox({ title: customTitle||'JSONEdit', text: 'Введите название нового свойства' });
+                let propType = await bcwd.shell.inputBox({ title: customTitle||'JSONEdit', text: 'Введите тип нового свойства\n(string, number, bool или object)', defaultText: 'string' });
+
+                if(propType == 'object') object[propName] = {};
+                else if(propType == 'string') object[propName] = '';
+                else if(propType == 'number') object[propName] = 0;
+                else if(propType == 'bool') object[propName] = false;
+
+                updateElems();
+            });
+            det.appendChild(addPropBtn);
+
+            updateElems();
+
+            parentElement.appendChild(det);
+        }
+        createObjTree(jobj, tree, customRoot||fn, 0, 3);
+    }
+
+    async function save(fn){
+        await bcwd.fs.file.writeObj(fn, jobj);
+        win.title.innerText = customTitle||(fn + ' - JSONEdit');
+        fileName = fn;
+    }
+
+    let btnCont = document.createElement('div');
+    btnCont.style.display = 'flex';
+    btnCont.style.justifyContent = 'space-evenly';
+    btnCont.style.paddingTop = '0.3em';
+    btnCont.style.paddingBottom = '0.1em';
+
+    let btnOpen = document.createElement('button');
+    btnOpen.innerText = 'Открыть';
+    btnOpen.addEventListener('click', async ()=>{
+        await open(await bcwd.shell.inputBox({ title: 'Открыть файл', text: 'Введите путь к файлу' }));
+    });
+
+    let btnSave = document.createElement('button');
+    btnSave.innerText = 'Сохранить';
+    btnSave.addEventListener('click', async ()=>{
+        if(fileName){
+            await save(fileName);
+        }else{
+            await save(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }));
+        }
+    });
+
+    let btnSaveAs = document.createElement('button');
+    btnSaveAs.innerText = 'Сохранить как';
+    btnSaveAs.addEventListener('click', async ()=>{
+        save(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }));
+    });
+
+    if(!onlySave) btnCont.appendChild(btnOpen);
+    btnCont.appendChild(btnSave);
+    if(!onlySave) btnCont.append(btnSaveAs);
+
+    el.appendChild(btnCont);
+}

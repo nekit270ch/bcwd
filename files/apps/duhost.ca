@@ -1,0 +1,36 @@
+async function main(bcwd, args){
+    if(args.length == 0){
+        bcwd.shell.messageBox({ title: 'Ошибка', text: 'Недостаточно аргументов', buttons: ['OK'] });
+        exit();
+        return;
+    }
+
+    let win, el = document.createElement('div'), fileName = args[0];
+
+    let fc = JSON.parse(await bcwd.fs.file.read(fileName));
+    let src = `data:${fc.type};base64,${fc.data}`;
+
+    if(fc.type.startsWith('image/')){
+        let img = document.createElement('img');
+        img.src = src;
+        el.appendChild(img);
+    }else if(fc.type.startsWith('audio/')){
+        let aud = document.createElement('audio');
+        aud.controls = true;
+        aud.src = src;
+        el.appendChild(aud);
+    }else if(fc.type.startsWith('video/')){
+        let vid = document.createElement('video');
+        vid.controls = true;
+        vid.src = src;
+        el.appendChild(vid);
+    }else{
+        let ifr = document.createElement('iframe');
+        ifr.width = args[1]?parseInt(args[1]):null;
+        ifr.height = args[1]?parseInt(args[1]):null;
+        ifr.src = src;
+        el.appendChild(ifr);
+    }
+
+    win = await bcwd.window.open({ title: fileName, elem: el, onclose: ()=>exit() });
+}

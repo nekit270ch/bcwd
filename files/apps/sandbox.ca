@@ -1,0 +1,42 @@
+async function main(bcwd, args){
+    if(args.length == 0){
+        exit();
+        return 'sandbox <fileName> [...args] - запустить указанное приложение CA в песочнице.\nЭтому приложению будет доступно только чтение файловой системы.'
+    }
+
+    let fbcwd = {};
+    for(let i in bcwd) if(i != 'fs') fbcwd[i] = bcwd[i];
+    fbcwd.fs = {
+        util: bcwd.fs.util,
+        db: {
+            read: bcwd.fs.db.read,
+            getFiles: bcwd.fs.db.getFiles,
+            write: ()=>null,
+            delete: ()=>null,
+            clear: ()=>null
+        },
+        file: {
+            read: bcwd.fs.file.read,
+            readObj: bcwd.fs.file.readObj,
+            exists: bcwd.fs.file.exists,
+            exec: bcwd.fs.file.exec,
+            write: ()=>null,
+            writeObj: ()=>null,
+            download: ()=>null,
+            delete: ()=>null
+        },
+        dir: {
+            list: bcwd.fs.dir.list,
+            exists: bcwd.fs.dir.exists,
+            create: ()=>null,
+            delete: ()=>null
+        }
+    };
+
+    return await (async ()=>{
+        let bcwd = fbcwd;
+        let code = await bcwd.fs.file.read(args[0]);
+        eval(code);
+        return main(fbcwd, args.slice(1));
+    })();
+}

@@ -1,0 +1,28 @@
+{
+    "iconSize": 50,
+    "background": {
+        "color": "#4a3ea0",
+        "wallpaper": null,
+        "wallpaperRepeat": "repeat",
+        "wallpaperSize": null
+    },
+    "icons": [
+        [
+            {
+                "name": "Файловый\nменеджер",
+                "icon": "/res/filemgr/icon.du",
+                "command": { "fileName": "/apps/filemgr.ca", "args": [] }
+            },
+            {
+                "name": "Текстовый\nредактор",
+                "icon": "/res/editor/icon.du",
+                "command": { "fileName": "/apps/editor.ca", "args": [] }
+            },
+            {
+                "name": "Информация\n",
+                "icon": "/res/fileicons/readme.du",
+                "command": { "fileName": "/apps/editor.ca", "args": ["/user/readme.txt"] }
+            }
+        ]
+    ]
+}

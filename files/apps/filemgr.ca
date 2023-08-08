@@ -1,0 +1,271 @@
+async function main(bcwd, args){
+    let dir = args[0] ?? '/';
+    let win, files, dirInput;
+
+    async function setDir(d){
+        if(await bcwd.fs.dir.exists(d)){
+            dir = d;
+            dirInput.value = d;
+            win.title.innerText = d + ' - Файловый менеджер';
+            listDir();
+        }else{
+            bcwd.shell.messageBox({
+                title: 'Ошибка',
+                text:  `Путь "${d}" не найден`,
+                buttons: ['OK']
+            })
+        }
+    }
+
+    async function listDir(){
+        while(files.firstChild) files.removeChild(files.lastChild);
+
+        files.style.borderBottom = '';
+
+        let list = await bcwd.fs.dir.list(dir, false);
+
+        if(list.length == 0){
+            files.innerText = '<папка пуста>';
+            files.style.borderBottom = 'solid 1px black';
+            return;
+        }
+
+        let isCMOpened = false;
+
+        list.forEach(f=>{
+            let el = document.createElement('div');
+            el.innerText = f.split('/').pop();
+            el.style.borderBottom = 'solid 1px black';
+
+            el.addEventListener('click', async ()=>{
+                if(isCMOpened) return;
+                let isDir = await bcwd.fs.dir.exists(f);
+                if(isDir) setDir(f);
+                else{
+                    let r = await bcwd.shell.openFile(f);
+                    if(r == bcwd.shell.error.FILE_TYPE_NOT_FOUND){
+                        let re = await bcwd.shell.messageBox({
+                            title: 'Ошибка',
+                            text: `Тип файла "${f.split('.').pop()}" не найден`,
+                            buttons: ['OK', 'Открыть в редакторе']
+                        });
+                        if(re == 'Открыть в редакторе'){
+                            bcwd.shell.execCommand({fileName: '/apps/editor.ca', args: [f]});
+                        }
+                    }
+                }
+            });
+
+            el.addEventListener('contextmenu', async e=>{
+                e.preventDefault();
+
+                if(isCMOpened) return;
+                isCMOpened = true;
+                
+                let cm = document.createElement('div');
+                cm.style.position = 'absolute';
+                cm.style.zIndex = '999999';
+                cm.style.left = e.clientX+'px';
+                cm.style.top = e.clientY+'px';
+                cm.style.width = '10em';
+                cm.style.background = 'white';
+                cm.style.border = 'solid 1px black';
+
+                let fpath = bcwd.fs.util.makePath(dir, e.target.innerText);
+                let fname = fpath.split('/').at(-1);
+                let fext = fname.split('.').at(-1);
+
+                let fileActions = await bcwd.fs.file.readObj('/conf/fileactions.json');
+
+                function closeCM(){
+                    document.body.removeChild(cm);
+                    win.elem.removeEventListener('click', closeCM);
+                    isCMOpened = false;
+                }
+
+                function createCMItem(name, action){
+                    let cmi = document.createElement('div');
+                    cmi.innerText = name;
+                    cmi.style.borderBottom = 'solid 1px black';
+                    cmi.addEventListener('click', async ()=>{
+                        closeCM();
+                        await action();
+                        listDir();
+                    });
+
+                    cm.appendChild(cmi);
+                }
+
+                function parseCMActions(actions){
+                    if(!actions) return;
+                    for(let i in actions){
+                        createCMItem(i, async ()=>{
+                            await bcwd.shell.execCommand(actions[i], [ ["$filePath", fpath], ["$fileName", fname], ["$fileExt", fext] ]);
+                        });
+                    }
+                }
+
+                if(await bcwd.fs.dir.exists(fpath)){
+                    parseCMActions(fileActions["[dir]"]);
+
+                    createCMItem('Удалить', async ()=>{
+                        await bcwd.fs.file.delete(fpath);
+                    });
+                }else{
+                    parseCMActions(fileActions["[*]"]);
+                    parseCMActions(fileActions[fext]);
+
+                    createCMItem('Редактировать', async ()=>{
+                        bcwd.shell.execCommand({fileName: '/apps/editor.ca', args:[fpath]});
+                    });
+
+                    createCMItem('Копировать', async ()=>{
+                        await bcwd.fs.file.write(await bcwd.shell.inputBox({title:'Файловый менеджер',text:'Введите путь для копирования файла',defaultText:fpath}), await bcwd.fs.file.read(fpath));
+                    });
+
+                    createCMItem('Переместить', async ()=>{
+                        await bcwd.fs.file.write(await bcwd.shell.inputBox({title:'Файловый менеджер',text:'Введите путь для перемещения файла',defaultText:fpath}), await bcwd.fs.file.read(fpath));
+                        await bcwd.fs.file.delete(fpath);
+                    })
+
+                    createCMItem('Переименовать', async ()=>{
+                        await bcwd.fs.file.write(await bcwd.shell.inputBox({title:'Файловый менеджер',text:'Введите новое имя файла',defaultText:fpath}), await bcwd.fs.file.read(fpath));
+                        await bcwd.fs.file.delete(fpath);
+                    });
+
+                    createCMItem('Скачать', async ()=>{
+                        let fc = await bcwd.fs.file.read(fpath);
+                        let blob = new Blob([fc], {type: 'text/plain'});
+                        let url = URL.createObjectURL(blob);
+                        
+                        let a = document.createElement('a');
+                        a.href = url;
+                        a.download = fpath.split('/').at(-1);
+                        a.click();
+                    });
+
+                    createCMItem('Копировать путь', async ()=>{
+                        await navigator.clipboard.writeText(fpath);
+                    });
+
+                    createCMItem('Удалить', async ()=>{
+                        await bcwd.fs.file.delete(fpath);
+                    });
+                }
+
+                win.elem.addEventListener('click', closeCM);
+
+                document.body.appendChild(cm);
+            });
+
+            files.appendChild(el);
+        });
+    }
+
+    let el = document.createElement('div');
+    
+    dirInput = document.createElement('input');
+    dirInput.type = 'text';
+    dirInput.size = 60;
+    dirInput.autocomplete = 'no';
+    dirInput.value = dir;
+    dirInput.style.fontFamily = 'Consolas, monospace';
+
+    let goBtn = document.createElement('button');
+    goBtn.innerText = '>>';
+    goBtn.addEventListener('click', ()=>{
+        setDir(dirInput.value);
+    });
+
+    let backBtn = document.createElement('button');
+    backBtn.innerText = '..';
+    backBtn.addEventListener('click', ()=>{
+        setDir(dir.split('/').slice(0, -1).join('/')||'/');
+    });
+
+    files = document.createElement('div');
+
+    let btnCont = document.createElement('div');
+    btnCont.style.display = 'flex';
+    btnCont.style.justifyContent = 'space-evenly';
+    btnCont.style.paddingTop = '0.6em';
+
+    let newFileBtn = document.createElement('button');
+    newFileBtn.innerText = 'Создать файл';
+    newFileBtn.addEventListener('click', async ()=>{
+        await bcwd.fs.file.write(bcwd.fs.util.makePath(dir, await bcwd.shell.inputBox({ title: 'Файловый менеджер', text: 'Введите имя файла' })), '');
+        listDir();
+    });
+
+    let newDirBtn = document.createElement('button');
+    newDirBtn.innerText = 'Создать папку';
+    newDirBtn.addEventListener('click', async ()=>{
+        let dn = await bcwd.shell.inputBox({ title: 'Файловый менеджер', text: 'Введите имя папки' });
+        if(['con', 'prn', 'nul', 'aux', 'com1', 'com2', 'lpt1', 'lpt2'].includes(dn)){
+            let mbr = await bcwd.shell.messageBox({
+                title: 'переименование',
+                text: 'Указано неверное имя устройства. УСТРОЙСТВА!!!',
+                buttons: ['OK', 'Не ок']
+            });
+
+            if(mbr == 'Не ок'){
+                bcwd.window.open({
+                    title: 'УКАЗАНО НЕВЕРНОЕ ИМЯ УСТРОЙСТВА',
+                    html: '<iframe width="560" height="315" src="https://www.youtube.com/embed/lFJ6C1Y-d8M?start=241" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>',
+                });
+            }
+        }else{
+            await bcwd.fs.dir.create(bcwd.fs.util.makePath(dir, dn));
+            listDir();
+        }
+    });
+
+    let uploadFileBtn = document.createElement('button');
+    uploadFileBtn.innerText = 'Загрузить файл';
+    uploadFileBtn.addEventListener('click', ()=>{
+        let inp = document.createElement('input');
+        inp.type = 'file';
+        inp.addEventListener('change', async ()=>{
+            let fr = new FileReader(), file = inp.files[0], istxt = false;
+
+            let ftypes = Object.keys(JSON.parse(await bcwd.fs.file.read('/conf/filetypes.json')))
+            if(/text\/.*/.test(file.type) || file.type == 'application/json' || ftypes.includes(file.name.split('.').pop())) istxt = true;
+
+            if(istxt) fr.readAsText(file);
+            else fr.readAsDataURL(file);
+
+            fr.onload = async ()=>{
+                let path = bcwd.fs.util.makePath(dir, await bcwd.shell.inputBox({ title: 'Файловый менеджер', text: 'Введите имя файла', defaultText: file.name }));
+                let content = '';
+
+                if(istxt) content = fr.result;
+                else{
+                    path += '.du';
+                    content = JSON.stringify({ format: bcwd.ff.du.format, type: file.type, data: fr.result.split(',')[1] });
+                }
+
+                await bcwd.fs.file.write(path, content);
+                listDir();
+            }
+        });
+        inp.click();
+    });
+
+    btnCont.appendChild(newFileBtn);
+    btnCont.appendChild(newDirBtn);
+    btnCont.appendChild(uploadFileBtn);
+
+    el.appendChild(dirInput);
+    el.appendChild(goBtn);
+    el.appendChild(backBtn);
+    el.appendChild(files);
+    el.appendChild(btnCont);
+
+    win = await bcwd.window.open({
+        title: dir + ' - Файловый менеджер',
+        elem: el,
+        onclose: ()=>exit()
+    });
+
+    setDir(dir);
+}

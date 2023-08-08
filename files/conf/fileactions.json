@@ -1,0 +1,10 @@
+{
+    "[dir]": {},
+    "[*]": {},
+    "du": {
+        "Открыть в DUEdit": { "fileName": "/apps/duedit.ca", "args": ["$filePath"] }
+    },
+    "json": {
+        "Открыть в JSONEdit": { "fileName": "/apps/jsonedit.ca", "args": ["$filePath"] }
+    }
+}

@@ -1,0 +1,53 @@
+{
+    "window": {
+        "window": {
+            "position": "absolute",
+            "display": "inline-block",
+            "border": "solid 1px black",
+            "userSelect": "none",
+            "cursor": "default",
+            "background": "white"
+        },
+        "title": {
+            "borderBottom": "solid 1px black"
+        },
+        "closeButton": {
+            "float": "right",
+            "background": "white",
+            "cursor": "pointer",
+            "border": "none",
+            "borderLeft": "solid 1px black",
+            "padding": "0 0.5em",
+            "margin": "0"
+        }
+    },
+    "desktop": {
+        "background": {
+            "position": "absolute",
+            "left": "0",
+            "top": "0",
+            "width": "100vw",
+            "height": "100vh"
+        },
+        "icon": {
+            "padding": "1em"
+        },
+        "text": {
+            "color": "white",
+            "marginTop": "0.1em"
+        }
+    },
+    "css": {
+        "body": {
+            "overflow": "hidden",
+            "fontFamily": "Consolas, monospace",
+            "userSelect": "none"
+        },
+        "button": {
+            "padding": "0.1em 1em"
+        },
+        "input[type=\"text\"], input[type=\"password\"]": {
+            "fontFamily": "Consolas, monospace"
+        }
+    }
+}

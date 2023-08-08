@@ -1,0 +1,199 @@
+async function main(bcwd, args){
+    let win, el = document.createElement('div');
+
+    let fileName = args[0];
+    if(fileName) open(fileName);
+
+    let cnv = document.createElement('canvas');
+    cnv.width = 500;
+    cnv.height = 400;
+    cnv.style.margin = '0.3em';
+    cnv.style.border = 'solid 1px black';
+
+    let ctx = cnv.getContext('2d');
+    let isdr = false;
+    let tool = 'brush';
+
+    ctx.lineWidth = 2;
+    
+    async function open(fn){
+        if(!(await bcwd.ff.du.getType(fn)).startsWith('image/')){
+            await bcwd.shell.messageBox({ title: 'Ошибка', text: `Файл "${fn}" не является изображением`, buttons: ['OK'] });
+            return;
+        }
+        fileName = fn;
+        let img = new Image();
+        img.src = await bcwd.ff.du.getDataURL(fn);
+        img.onload = ()=>{
+            cnv.width = img.naturalWidth;
+            cnv.height = img.naturalHeight;
+            sizeInp1.value = cnv.width;
+            sizeInp2.value = cnv.height;
+            ctx.clearRect(0, 0, cnv.width, cnv.height);
+            ctx.drawImage(img, 0, 0);
+            win.title.innerText = fn + ' - DUEdit';
+        }
+    }
+
+    async function save(fn){
+        fileName = fn;
+        let dataURL = cnv.toDataURL();
+        await bcwd.ff.du.createFromDataURL(fn, dataURL);
+        win.title.innerText = fn + ' - DUEdit';
+    }
+
+    cnv.addEventListener('mousedown', ()=>{
+        ctx.beginPath();
+        isdr = true;
+    });
+    cnv.addEventListener('mouseup', ()=>{
+        isdr = false;
+    });
+    cnv.addEventListener('mouseleave', ()=>{
+        isdr = false;
+    });
+
+    cnv.addEventListener('mousemove', e=>{
+        if(!isdr) return;
+        let rct = cnv.getBoundingClientRect();
+        if(tool == 'brush'){
+            ctx.lineTo(e.clientX - rct.left, e.clientY - rct.top);
+            ctx.stroke();
+        }else if(tool == 'eraser'){
+            ctx.clearRect(e.clientX - rct.left, e.clientY - rct.top, ctx.lineWidth, ctx.lineWidth);
+        }
+    });
+
+    cnv.addEventListener('mousemove', e=>{
+        switch(tool){
+            case 'text': {
+                cnv.style.cursor = 'text';
+                break;
+            }
+            case 'brush':
+            case 'eraser':
+            default: {
+                cnv.style.cursor = 'crosshair';
+            }
+        }
+    });
+
+    cnv.addEventListener('click', async e=>{
+        let rct = cnv.getBoundingClientRect();
+        if(tool == 'text'){
+            let fontName = await bcwd.shell.inputBox({ title: 'DUEdit', text: 'Выберите шрифт', defaultText: 'Arial' });
+            let fontSize = await bcwd.shell.inputBox({ title: 'DUEdit', text: 'Выберите размер шрифта', defaultText: '18' });
+            ctx.font = `${fontSize}px ${fontName}`;
+            ctx.fillText(await bcwd.shell.inputBox({ title: 'DUEdit', text: 'Введите текст' }), e.clientX - rct.left, e.clientY - rct.top);
+        }
+    });
+
+    let btnCont1 = document.createElement('div');
+    btnCont1.style.display = 'flex';
+    btnCont1.style.justifyContent = 'space-evenly';
+    btnCont1.style.paddingBottom = '0.6em';
+
+    let toolInp = document.createElement('select');
+    toolInp.options.add(new Option('Кисть', 'brush'));
+    toolInp.options.add(new Option('Ластик', 'eraser'));
+    toolInp.options.add(new Option('Текст', 'text'));
+    toolInp.selectedIndex = 0;
+    toolInp.addEventListener('change', ()=>{
+        tool = toolInp.value;
+    });
+
+    let colorInp = document.createElement('input');
+    colorInp.type = 'color';
+    colorInp.title = 'Цвет';
+    colorInp.addEventListener('change', ()=>{
+        ctx.beginPath();
+        ctx.strokeStyle = colorInp.value;
+        ctx.fillStyle = colorInp.value;
+    });
+
+    let widthInp = document.createElement('input');
+    widthInp.type = 'number';
+    widthInp.title = 'Толщина';
+    widthInp.value = 2;
+    widthInp.maxLength = 4;
+    widthInp.style.width = '4em';
+    widthInp.addEventListener('change', ()=>{
+        ctx.beginPath();
+        ctx.lineWidth = widthInp.valueAsNumber;
+    });
+
+    let sizeInp1 = document.createElement('input');
+    sizeInp1.type = 'number';
+    sizeInp1.style.width = '3em';
+    sizeInp1.value = cnv.width;
+    sizeInp1.addEventListener('change', ()=>{
+        cnv.width = sizeInp1.valueAsNumber;
+        ctx.beginPath();
+        ctx.strokeStyle = colorInp.value;
+        ctx.lineWidth = widthInp.valueAsNumber;
+    });
+
+    let sizeInp2 = document.createElement('input');
+    sizeInp2.type = 'number';
+    sizeInp2.style.width = '3em';
+    sizeInp2.value = cnv.height;
+    sizeInp2.addEventListener('change', ()=>{
+        cnv.height = sizeInp2.valueAsNumber;
+        ctx.beginPath();
+        ctx.strokeStyle = colorInp.value;
+        ctx.lineWidth = widthInp.valueAsNumber;
+    });
+
+    let toolCont = document.createElement('div');
+    toolCont.innerHTML = 'Инструмент<br>'
+    toolCont.appendChild(toolInp);
+
+    let colorCont = document.createElement('div');
+    colorCont.innerHTML = 'Цвет<br>'
+    colorCont.appendChild(colorInp);
+
+    let widthCont = document.createElement('div');
+    widthCont.innerHTML = 'Толщина<br>'
+    widthCont.appendChild(widthInp);
+
+    let sizeCont = document.createElement('div');
+    sizeCont.innerHTML = 'Размер<br>';
+    sizeCont.append(sizeInp1, 'x', sizeInp2);
+
+    let btnCont2 = document.createElement('div');
+    btnCont2.style.display = 'flex';
+    btnCont2.style.justifyContent = 'space-evenly';
+    btnCont2.style.paddingTop = '0.6em';
+
+    let btnOpen = document.createElement('button');
+    btnOpen.innerText = 'Открыть';
+    btnOpen.addEventListener('click', async ()=>{
+        open(await bcwd.shell.inputBox({ title: 'Открыть файл', text: 'Введите путь к файлу' }));
+    });
+
+    let btnSave = document.createElement('button');
+    btnSave.innerText = 'Сохранить';
+    btnSave.addEventListener('click', async ()=>{
+        if(fileName){
+            save(fileName);
+        }else{
+            save(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }));
+        }
+    });
+
+    let btnSaveAs = document.createElement('button');
+    btnSaveAs.innerText = 'Сохранить как';
+    btnSaveAs.addEventListener('click', async ()=>{
+        save(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }));
+    });
+
+    btnCont1.append(toolCont, colorCont, widthCont, sizeCont);
+    btnCont2.append(btnOpen, btnSave, btnSaveAs);
+    el.append(btnCont1, cnv, btnCont2);
+
+    win = await bcwd.window.open({
+        title: 'DUEdit',
+        elem: el,
+        onclose: ()=>exit()
+    });
+}

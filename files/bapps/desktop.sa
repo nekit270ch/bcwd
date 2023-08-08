@@ -1,0 +1,46 @@
+async function main(bcwd, _){
+    let conf = JSON.parse(await bcwd.fs.file.read('/conf/desktop.json'));
+    let style = JSON.parse(await bcwd.fs.file.read('/conf/style.json'));
+
+    bcwd.util.appendStyle(bcwd.desktopEl, style.desktop.background);
+
+    if(conf.background.color) bcwd.desktopEl.style.backgroundColor = conf.background.color;
+    if(conf.background.wallpaper){
+        bcwd.desktopEl.style.backgroundImage = 'url("'+await bcwd.ff.du.getDataURL(conf.background.wallpaper)+'")';
+        bcwd.desktopEl.style.backgroundRepeat = conf.background.wallpaperRepeat;
+        bcwd.desktopEl.style.backgroundSize = conf.background.wallpaperSize;
+    }
+
+    let table = document.createElement('table');
+    conf.icons.forEach(row=>{
+        let tr = document.createElement('tr');
+        row.forEach(async col=>{
+            let td = document.createElement('td');
+            td.style.textAlign = 'center';
+            
+            td.addEventListener('click', ()=>{
+                bcwd.shell.execCommand(col.command);
+            });
+
+            bcwd.util.appendStyle(td, style.desktop.icon);
+
+            let img = document.createElement('img');
+            img.src = await bcwd.ff.du.getDataURL(col.icon);
+            img.width = conf.iconSize;
+            img.height = conf.iconSize;
+
+            let br = document.createElement('br');
+
+            let name = document.createElement('div');
+            name.innerText = col.name;
+            bcwd.util.appendStyle(name, style.desktop.text);
+
+            td.appendChild(img);
+            td.appendChild(br);
+            td.appendChild(name);
+            tr.appendChild(td);
+        });
+        table.appendChild(tr);
+    });
+    bcwd.desktopEl.appendChild(table);
+}

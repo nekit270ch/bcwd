@@ -1,0 +1,5 @@
+{
+    "shell": "/bapps/desktop.sa",
+    "useFetchProxy": true,
+    "fetchProxyURL": "https://nekit270.ch/fetchProxy.php?url=$URL"
+}

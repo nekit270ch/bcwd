@@ -1,0 +1,19 @@
+async function main(bcwd, args){
+    if(args.length == 0){
+        bcwd.shell.messageBox({ title: 'Ошибка', text: 'Недостаточно аргументов', buttons: ['OK'] });
+        exit();
+        return;
+    }
+
+    let win, el = document.createElement('div');
+
+    el.style.width = (args[1]??'400')+'px';
+    el.style.height = (args[2]??'300')+'px';
+    el.innerHTML = (await bcwd.fs.file.read(args[0]));
+
+    win = await bcwd.window.open({
+        title: args[0],
+        elem: el,
+        onclose: ()=>exit()
+    });
+}
