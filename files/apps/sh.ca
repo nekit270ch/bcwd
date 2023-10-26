@@ -1,4 +1,3 @@
-//LLShell
 async function main(bcwd, _){
     let win, el = document.createElement('div');
 
@@ -59,7 +58,15 @@ async function main(bcwd, _){
         'set': args=>variables[args[0]] = args[1],
         'js': args=>eval(args.join(' ')),
         'reboot': _=>location.reload(),
-        'cl_args': args=>console.log(args)
+        'cl_args': args=>console.log(args),
+        'exec': async args=>await bcwd.shell.execCommand({fileName: args[0], args: args.slice(1)}),
+        'fread': async args=>await bcwd.fs.file.read(args[0]),
+        'fwrite': async args=>await bcwd.fs.file.write(args[0], args[1]),
+        'fexec': async args=>await bcwd.fs.file.exec(args[0], args.slice(1)),
+        'fdelete': async args=>await bcwd.fs.file.delete(args[0]),
+        'dcreate': async args=>await bcwd.fs.dir.create(args[0]),
+        'ddelete': async args=>await bcwd.fs.dir.delete(args[0]),
+        'dlist': async args=>(await bcwd.fs.dir.list(args[0], !!args[1], !!args[2])).join('\n')
     }
 
     let variables = {};

@@ -1,0 +1,52 @@
+async function main(bcwd, args){
+    let win, el = document.createElement('div');
+    let input = document.createElement('input'), ifr = document.createElement('iframe');
+
+    if(args.length > 0) openURL(args[0]);
+
+    input.style.width = '30em';
+    input.style.fontSize = '1em';
+    input.type = 'text';
+    input.placeholder = 'Введите URL'
+    input.addEventListener('keydown', e=>{
+        if(e.key == 'Enter') openURL(input.value);
+    });
+    el.appendChild(input);
+    
+    el.appendChild(document.createElement('br'));
+
+    ifr.style.width = '30em';
+    ifr.style.height = '10em';
+    ifr.style.overflow = 'auto';
+    ifr.style.resize = 'both';
+    new ResizeObserver(()=>{
+        input.style.width = getComputedStyle(ifr).width;
+    }).observe(ifr);
+    el.appendChild(ifr);
+
+    async function openURL(url){
+        input.value = url;
+        if(url.startsWith('localfile:')){
+            let fileName = url.split('localfile:').at(-1);
+            let fileExt = fileName.split('.').at(-1);
+            if(fileExt == 'du'){
+                ifr.src = await bcwd.ff.du.getDataURL(fileName);
+            }else if(fileExt == 'html'){
+                ifr.src = 'data:text/html;charset-utf-8,'+await bcwd.fs.file.read(fileName);
+            }else if(fileExt == 'txt'){
+                ifr.src = 'data:text/plain;charset=utf-8,'+await bcwd.fs.file.read(fileName);
+            }else{
+                ifr.src = 'data:text/plain;charset=utf-8,'+await bcwd.shell.openFile(fileName);
+            }
+        }else{
+            ifr.src = url;
+        }
+    }
+
+    win = await bcwd.window.open({
+        title: 'Браузер',
+        elem: el,
+        resizable: false,
+        onclose: ()=>exit()
+    });
+}

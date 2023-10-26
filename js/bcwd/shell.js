@@ -24,6 +24,7 @@ bcwd.shell = {
                 command.args.unshift(command.fileName);
                 command.fileName = '/bapps/apphost.sa';
             }
+            
             return await bcwd.fs.file.exec(command.fileName, command.args);
         }else{
             return this.error.INVALID_COMMAND;
@@ -48,7 +49,7 @@ bcwd.shell = {
             txth.style.justifyContent = 'flex-center';
 
             let txt = document.createElement('div');
-            txt.innerHTML = obj.text.replaceAll('\n', '<br>');
+            txt.innerHTML = obj.text.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('\n', '<br>');
 
             let btnCont = document.createElement('div');
             btnCont.style.display = 'flex';

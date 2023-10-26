@@ -3,6 +3,53 @@ bcwd.ff = {
         let fc = JSON.parse(await bcwd.fs.file.read(fileName));
         return fc.format == format;
     },
+    bpf: {
+        format: 'BCWD/BPF 2.0',
+        async create(files, outFile){
+            let obj = { format: this.format, files: [] };
+
+            await bcwd.util.forEachAsync(files, async file=>{
+                obj.files.push({
+                    name: file.split('/').at(-1),
+                    content: await bcwd.fs.file.read(file)
+                });
+            });
+
+            await bcwd.fs.file.writeObj(outFile, obj, true);
+        },
+        async extract(inFile, outDir){
+            let obj = await bcwd.fs.file.readObj(inFile);
+
+            await bcwd.util.forEachAsync(obj.files, async file=>{
+                await bcwd.fs.file.write(
+                    bcwd.fs.util.makePath(outDir, file.name),
+                    file.content
+                );
+            });
+        }
+    },
+    legacyBpf: {
+        format: 'BCWD/BclibBPF 1.0',
+        async create(files, outFile){
+            let obj = { format: this.format, name: '', files: files.map(n=>n.split('/').at(-1)), data: [] };
+
+            await bcwd.util.forEachAsync(files, async file=>{
+                obj.data.push(btoa(encodeURIComponent(await bcwd.fs.file.read(file))));
+            });
+
+            await bcwd.fs.file.writeObj(outFile, obj, true);
+        },
+        async extract(inFile, outDir){
+            let obj = await bcwd.fs.file.readObj(inFile);
+
+            await bcwd.util.forEachAsync(obj.files, async (file,i)=>{
+                await bcwd.fs.file.write(
+                    bcwd.fs.util.makePath(outDir, file),
+                    decodeURIComponent(atob(obj.data[i]))
+                );
+            });
+        }
+    },
     bcap: {
         format: 'BCWD/AppPackage 1.0',
         async installFromFile(fileName, verbose){

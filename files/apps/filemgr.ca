@@ -109,7 +109,7 @@ async function main(bcwd, args){
                     parseCMActions(fileActions["[dir]"]);
 
                     createCMItem('Удалить', async ()=>{
-                        await bcwd.fs.file.delete(fpath);
+                        await bcwd.fs.dir.delete(fpath);
                     });
                 }else{
                     parseCMActions(fileActions["[*]"]);

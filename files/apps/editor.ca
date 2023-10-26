@@ -9,11 +9,25 @@ async function main(bcwd, args){
         win.title.innerText = fileName + ' - Текстовый редактор';
     }
 
+    function insertText(ta, text){
+        let start = ta.selectionStart, end = ta.selectionEnd;
+        ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+        ta.focus();
+        ta.selectionEnd = (start==end?end+text.length:end);
+    }
+
     let el = document.createElement('div');
 
     ta = document.createElement('textarea');
     ta.style.width = '40em';
     ta.style.height = '15em';
+    ta.addEventListener('keydown', e=>{
+        if(e.key == 'Tab'){
+            e.preventDefault();
+            insertText(e.target, '    ');
+            return false;
+        }
+    });
 
     let btnCont = document.createElement('div');
     btnCont.style.display = 'flex';
@@ -28,14 +42,18 @@ async function main(bcwd, args){
 
     let btnSave = document.createElement('button');
     btnSave.innerText = 'Сохранить';
-    btnSave.addEventListener('click', ()=>{
-        bcwd.fs.file.write(fileName, ta.value);
+    btnSave.addEventListener('click', async ()=>{
+        if(!fileName){
+            fileName = await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' });
+            win.title.innerText = fileName + ' - Текстовый редактор';
+        }
+        await bcwd.fs.file.write(fileName, ta.value);
     });
 
     let btnSaveAs = document.createElement('button');
     btnSaveAs.innerText = 'Сохранить как';
     btnSaveAs.addEventListener('click', async ()=>{
-        bcwd.fs.file.write(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }), ta.value);
+        await bcwd.fs.file.write(await bcwd.shell.inputBox({ title: 'Сохранить файл', text: 'Введите путь к файлу' }), ta.value);
     });
 
     btnCont.appendChild(btnOpen);

@@ -1,123 +1,160 @@
 bcwd.fs = {
+    pathDelim: '/',
     error: {
         FILE_NOT_FOUND: 'File not found'
     },
     db: {
         clear(cb){
-            let open = indexedDB.deleteDatabase('bcwd_storage');
-            open.onsuccess = ()=>{
-                if(cb) cb();
+            try{
+                let open = indexedDB.deleteDatabase('bcwd_storage');
+                open.onsuccess = ()=>{
+                    if(cb) cb();
+                }
+            }catch(e){
+                cb(e);
             }
         },
         write(fileName, data, cb){
-            let open = indexedDB.open('bcwd_storage', 1);
-            open.onupgradeneeded = ()=>{
-                let db = open.result;
-                db.createObjectStore('storage', {keyPath: 'name'});
-            }
-            open.onsuccess = ()=>{
-                let db = open.result;
-                let tr = db.transaction('storage', 'readwrite');
+            try{
+                let open = indexedDB.open('bcwd_storage', 1);
+                open.onupgradeneeded = ()=>{
+                    let db = open.result;
+                    db.createObjectStore('storage', {keyPath: 'name'});
+                }
+                open.onsuccess = ()=>{
+                    let db = open.result;
+                    let tr = db.transaction('storage', 'readwrite');
 
-                let storage = tr.objectStore('storage');
-                let file = {name: fileName, data: data};
-                let req = storage.put(file);
-                req.onsuccess = ()=>{
-                    if(cb) cb();
+                    try{
+                        let storage = tr.objectStore('storage');
+                        let file = {name: fileName, data: data};
+                        let req = storage.put(file);
+                        req.onsuccess = ()=>{
+                            if(cb) cb();
+                        }
+                        req.onerror = ()=>{
+                            if(cb) cb(req.error);
+                        }
+                    }catch(e){
+                        if(cb) cb(e);
+                    }
                 }
-                req.onerror = ()=>{
-                    if(cb) cb(req.error);
+                open.onerror = ()=>{
+                    if(cb) cb(open.error);
                 }
-            }
-            open.onerror = ()=>{
-                if(cb) cb(open.error);
+            }catch(e){
+                if(cb) cb(e);
             }
         },
         read(fileName, cb){
-            let open = indexedDB.open('bcwd_storage', 1);
-            open.onupgradeneeded = ()=>{
-                let db = open.result;
-                db.createObjectStore('storage', {keyPath: 'name'});
-            }
-            open.onsuccess = ()=>{
-                let db = open.result;
-                let tr = db.transaction('storage', 'readonly');
+            try{
+                let open = indexedDB.open('bcwd_storage', 1);
+                open.onupgradeneeded = ()=>{
+                    let db = open.result;
+                    db.createObjectStore('storage', {keyPath: 'name'});
+                }
+                open.onsuccess = ()=>{
+                    let db = open.result;
+                    let tr = db.transaction('storage', 'readonly');
 
-                let storage = tr.objectStore('storage');
-                let req = storage.get(fileName);
-                req.onsuccess = ()=>{
-                    if(req.result){
-                        if(cb) cb(req.result.data);
-                    }else{
-                        if(cb) cb(null, bcwd.fs.error.FILE_NOT_FOUND);
+                    try{
+                        let storage = tr.objectStore('storage');
+                        let req = storage.get(fileName);
+                        req.onsuccess = ()=>{
+                            if(req.result){
+                                if(cb) cb(req.result.data);
+                            }else{
+                                if(cb) cb(null, bcwd.fs.error.FILE_NOT_FOUND);
+                            }
+                        }
+                        req.onerror = ()=>{
+                            if(cb) cb(null, req.error);
+                        }
+                    }catch(e){
+                        if(cb) cb(null, e);
                     }
                 }
-                req.onerror = ()=>{
-                    if(cb) cb(null, req.error);
+                open.onerror = ()=>{
+                    if(cb) cb(null, open.error);
                 }
-            }
-            open.onerror = ()=>{
-                if(cb) cb(null, open.error);
+            }catch(e){
+                if(cb) cb(null, e);
             }
         },
         getFiles(cb){
-            let open = indexedDB.open('bcwd_storage', 1);
-            open.onupgradeneeded = ()=>{
-                let db = open.result;
-                db.createObjectStore('storage', {keyPath: 'name'});
-            }
-            open.onsuccess = ()=>{
-                let db = open.result;
-                let tr = db.transaction('storage', 'readonly');
+            try{
+                let open = indexedDB.open('bcwd_storage', 1);
+                open.onupgradeneeded = ()=>{
+                    let db = open.result;
+                    db.createObjectStore('storage', {keyPath: 'name'});
+                }
+                open.onsuccess = ()=>{
+                    let db = open.result;
+                    let tr = db.transaction('storage', 'readonly');
 
-                let storage = tr.objectStore('storage');
-                let req = storage.getAll();
-                req.onsuccess = ()=>{
-                    let obj = {};
-                    for(let i in req.result){
-                        let e = req.result[i];
-                        obj[e.name] = e.data;
+                    try{
+                        let storage = tr.objectStore('storage');
+                        let req = storage.getAll();
+                        req.onsuccess = ()=>{
+                            let obj = {};
+                            for(let i in req.result){
+                                let e = req.result[i];
+                                obj[e.name] = e.data;
+                            }
+                            if(cb) cb(obj);
+                        }
+                        req.onerror = ()=>{
+                            if(cb) cb({}, req.error);
+                        }
+                    }catch(e){
+                        if(cb) cb({}, e);
                     }
-                    if(cb) cb(obj);
                 }
-                req.onerror = ()=>{
-                    if(cb) cb({}, req.error);
+                open.onerror = ()=>{
+                    if(cb) cb({}, open.error);
                 }
-            }
-            open.onerror = ()=>{
-                if(cb) cb({}, open.error);
+            }catch(e){
+                if(cb) cb({}, e);
             }
         },
         delete(fileName, cb){
-            let open = indexedDB.open('bcwd_storage', 1);
-            open.onupgradeneeded = ()=>{
-                let db = open.result;
-                db.createObjectStore('storage', {keyPath: 'name'});
-            }
-            open.onsuccess = ()=>{
-                let db = open.result;
-                let tr = db.transaction('storage', 'readwrite');
+            try{
+                let open = indexedDB.open('bcwd_storage', 1);
+                open.onupgradeneeded = ()=>{
+                    let db = open.result;
+                    db.createObjectStore('storage', {keyPath: 'name'});
+                }
+                open.onsuccess = ()=>{
+                    let db = open.result;
+                    let tr = db.transaction('storage', 'readwrite');
 
-                let storage = tr.objectStore('storage');
-                let req = storage.delete(fileName);
-                req.onsuccess = ()=>{
-                    if(cb) cb();
+                    let storage = tr.objectStore('storage');
+                    try{
+                        let req = storage.delete(fileName);
+                        req.onsuccess = ()=>{
+                            if(cb) cb();
+                        }
+                        req.onerror = ()=>{
+                            if(cb) cb(req.error);
+                        }
+                    }catch(e){
+                        if(cb) cb(e);
+                    }
                 }
-                req.onerror = ()=>{
-                    if(cb) cb(req.error);
+                open.onerror = ()=>{
+                    if(cb) cb(open.error);
                 }
-            }
-            open.onerror = ()=>{
-                if(cb) cb(open.error);
+            }catch(e){
+                if(cb) cb(e);
             }
         }
     },
     file: {
         read(fileName){
-            return new Promise((res, rej)=>{
+            return new Promise((res, _)=>{
                 bcwd.fs.db.read(fileName, (data, error)=>{
                     if(error){
-                        rej(error);
+                        res(null, 'ERROR: '+error);
                     }else{
                         bcwd.fs.hook.fileHookList.forEach(hook=>{
                             data = hook('read', fileName, data);
@@ -128,10 +165,10 @@ bcwd.fs = {
             });
         },
         write(fileName, data){
-            return new Promise((res, rej)=>{
+            return new Promise((res, _)=>{
                 bcwd.fs.db.write(fileName, data, error=>{
                     if(error){
-                        rej(error);
+                        res('ERROR: '+error);
                     }else{
                         bcwd.fs.hook.fileHookList.forEach(hook=>{
                             hook('write', fileName);
@@ -142,8 +179,8 @@ bcwd.fs = {
             });
         },
         exists(fileName){
-            return new Promise((res, rej)=>{
-                this.read(fileName).then(()=>res(true)).catch(()=>res(false));
+            return new Promise((res, _)=>{
+                this.read(fileName).then((data, d2)=>res(data !== null));
             });
         },
         delete(fileName){
@@ -165,10 +202,14 @@ bcwd.fs = {
             return new Promise((res, _)=>{
                 this.read(fileName).then(data=>{
                     (()=>{
-                        eval(data);
-                        let result = main(bcwd, args);
-                        if(result instanceof Promise) result.then(d=>res(d));
-                        else res(result);
+                        try{
+                            eval(data);
+                            let result = main(bcwd, args);
+                            if(result instanceof Promise) result.then(d=>res(d)).catch(e=>res('ERROR: '+e));
+                            else res(result);
+                        }catch(e){
+                            res('ERROR: '+e);
+                        }
                     })();
                 });
             });
@@ -176,8 +217,8 @@ bcwd.fs = {
         async readObj(fileName){
             return JSON.parse(await this.read(fileName));
         },
-        async writeObj(fileName, obj){
-            await this.write(fileName, JSON.stringify(obj, null, 4));
+        async writeObj(fileName, obj, pack){
+            await this.write(fileName, JSON.stringify(obj, null, pack?null:4));
         },
         async download(fileName, url){
             await this.write(fileName, await (await fetch(url)).text());
@@ -202,14 +243,14 @@ bcwd.fs = {
 
                     let f = [];
                     for(let file in files){
-                        if(file.endsWith('/.d')){
-                            let fn = file.split('/').slice(0, -1).join('/');
+                        if(file.endsWith(bcwd.fs.pathDelim + '.d')){
+                            let fn = file.split(bcwd.fs.pathDelim).slice(0, -1).join(bcwd.fs.pathDelim);
                             if(fn.length == 0) continue;
 
                             if(recursive){
                                 if(fn != dirName && fn.startsWith(dirName)) f.push(fn);
                             }else{
-                                if(fn.startsWith(dirName) && !fn.replace(dirName+(dirName=='/'?'':'/'), '').includes('/')) f.push(fn);
+                                if(fn.startsWith(dirName) && !fn.replace(dirName+(dirName==bcwd.fs.pathDelim?'':bcwd.fs.pathDelim), '').includes(bcwd.fs.pathDelim)) f.push(fn);
                             }
                             if(!includeD) continue;
                         }
@@ -217,7 +258,7 @@ bcwd.fs = {
                         if(recursive){
                             if(file.startsWith(dirName)) f.push(file);
                         }else{
-                            if(file.startsWith(dirName) && file == (dirName + (dirName=='/'?'':'/') + file.split('/').at(-1))) f.push(file);
+                            if(file.startsWith(dirName) && file == (dirName + (dirName==bcwd.fs.pathDelim?'':bcwd.fs.pathDelim) + file.split(bcwd.fs.pathDelim).at(-1))) f.push(file);
                         }
                     }
                     bcwd.fs.hook.dirHookList.forEach(hook=>{
@@ -228,18 +269,18 @@ bcwd.fs = {
             });
         },
         exists(dirName){
-            return bcwd.fs.file.exists(bcwd.fs.util.makePath(dirName, '/.d'));
+            return bcwd.fs.file.exists(bcwd.fs.util.makePath(dirName, '.d'));
         }
     },
     util: {
         makePath(...components){
-            return components.join('/').replace(/[\/]{2,}/g, '/');
+            return components.join(bcwd.fs.pathDelim).replace(new RegExp(`[\\${bcwd.fs.pathDelim}]{2,}`, 'g'), bcwd.fs.pathDelim);
         },
         splitPath(path){
-            return path.split('/');
+            return path.split(bcwd.fs.pathDelim);
         },
         getLastPathPart(path){
-            return path.split('/').at(-1);
+            return path.split(bcwd.fs.pathDelim).at(-1);
         }
     },
     hook: {

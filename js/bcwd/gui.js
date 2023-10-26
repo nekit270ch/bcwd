@@ -1,6 +1,18 @@
 bcwd.desktopEl = document.querySelector('#desktop');
 bcwd.windowsEl = document.querySelector('#windows');
 
+if(!bcwd.desktopEl){
+    let del = document.createElement('div');
+    document.body.appendChild(del);
+    bcwd.desktopEl = del;
+}
+
+if(!bcwd.windowsEl){
+    let wel = document.createElement('div');
+    document.body.appendChild(wel);
+    bcwd.windowsEl = wel;
+}
+
 bcwd.util.appendStyle = async function(elem, style){
     for(let i in style){
         let sti = style[i];

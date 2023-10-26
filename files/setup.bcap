@@ -31,6 +31,7 @@
         {"action": "downloadFile", "path": "/apps/sandbox.ca"},
         {"action": "downloadFile", "path": "/apps/jsonedit.ca"},
         {"action": "downloadFile", "path": "/apps/themeinstall.ca"},
+        {"action": "downloadFile", "path": "/apps/browser.ca"},
         {"action": "createDir", "path": "/res"},
         {"action": "createDir", "path": "/res/temp"},
         {"action": "createDir", "path": "/res/filemgr"},
@@ -43,6 +44,8 @@
         {"action": "downloadFile", "path": "/res/system/ImportantFile.du"},
         {"action": "createDir", "path": "/res/themes"},
         {"action": "downloadFile", "path": "/res/themes/original.theme"},
+        {"action": "createDir", "path": "/res/browser"},
+        {"action": "downloadFile", "path": "/res/browser/blank.html"},
         {"action": "createDir", "path": "/lib"},
         {"action": "createDir", "path": "/user"},
         {"action": "downloadFile", "path": "/user/readme.txt"}

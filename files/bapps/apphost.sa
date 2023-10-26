@@ -1,10 +1,17 @@
+//BCWD Application Host
+
 async function main(bcwd, args){
 	const file = bcwd.fs.file;
 
 	if(args.length == 0) return 'MISSING_ARGUMENT';
-	let fileName = args[0];
-	if(!await file.exists(args[0])) return bcwd.fs.error.FILE_NOT_FOUND;
-	let code = await file.read(fileName);
+	let fileName = args[0], code = 'function main(){exit()}';
+
+	if(fileName.startsWith('res:')){
+		code = fileName.slice(4);
+	}else{
+		if(!await file.exists(args[0])) return bcwd.fs.error.FILE_NOT_FOUND;
+		code = await file.read(fileName);
+	}
 
 	let pid = bcwd.proc.create({
 		name: fileName,
